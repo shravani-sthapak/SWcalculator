@@ -1,6 +1,7 @@
 from tkinter import filedialog, messagebox
 import pandas as pd
 import tkinter as tk
+from openpyxl import Workbook
 
 class SheetMergerApp:
     def __init__(self, root):
@@ -19,9 +20,9 @@ class SheetMergerApp:
         self.viva_file_vars = []
 
         self.demo_grading_var = tk.StringVar(value="Normal")
-        self.quiz_grading_vars = []  # Store StringVar for each quiz sheet
-        self.attendance_grading_vars = []  # Store StringVar for each attendance sheet
-        self.viva_grading_vars = []  # Store StringVar for each viva sheet
+        self.quiz_grading_vars = []
+        self.attendance_grading_vars = []
+        self.viva_grading_vars = []
 
         # Weightage fields
         self.demo_weightage = tk.DoubleVar(value=30)
@@ -29,108 +30,123 @@ class SheetMergerApp:
         self.attendance_weightages = []
         self.viva_weightages = []
 
+        # New variables for branch, subject, and semester
+        self.branch_var = tk.StringVar()
+        self.subject_var = tk.StringVar()
+        self.semester_var = tk.StringVar()
+
+        # New input fields for branch, subject, and semester (moved to the top)
+        tk.Label(root, text="Branch:").grid(row=0, column=0)
+        tk.Entry(root, textvariable=self.branch_var).grid(row=0, column=1)
+
+        tk.Label(root, text="Subject:").grid(row=1, column=0)
+        tk.Entry(root, textvariable=self.subject_var).grid(row=1, column=1)
+
+        tk.Label(root, text="Semester:").grid(row=2, column=0)
+        tk.Entry(root, textvariable=self.semester_var).grid(row=2, column=1)
+
         # Input fields for number of sheets
-        tk.Label(root, text="Number of Demo Sheets:").grid(row=0, column=0)
-        tk.Entry(root, textvariable=self.num_demo_sheets).grid(row=0, column=1)
+        tk.Label(root, text="Number of Demo Sheets:").grid(row=3, column=0)
+        tk.Entry(root, textvariable=self.num_demo_sheets).grid(row=3, column=1)
 
-        tk.Label(root, text="Number of Quiz Sheets:").grid(row=1, column=0)
-        tk.Entry(root, textvariable=self.num_quiz_sheets).grid(row=1, column=1)
+        tk.Label(root, text="Number of Quiz Sheets:").grid(row=4, column=0)
+        tk.Entry(root, textvariable=self.num_quiz_sheets).grid(row=4, column=1)
 
-        tk.Label(root, text="Number of Attendance Sheets:").grid(row=2, column=0)
-        tk.Entry(root, textvariable=self.num_attendance_sheets).grid(row=2, column=1)
+        tk.Label(root, text="Number of Attendance Sheets:").grid(row=5, column=0)
+        tk.Entry(root, textvariable=self.num_attendance_sheets).grid(row=5, column=1)
 
-        tk.Label(root, text="Number of Viva Sheets:").grid(row=3, column=0)
-        tk.Entry(root, textvariable=self.num_viva_sheets).grid(row=3, column=1)
+        tk.Label(root, text="Number of Viva Sheets:").grid(row=6, column=0)
+        tk.Entry(root, textvariable=self.num_viva_sheets).grid(row=6, column=1)
 
         # Submit button to create upload fields
-        tk.Button(root, text="Set Sheet Counts", command=self.create_upload_fields).grid(row=4, column=0, columnspan=2)
+        tk.Button(root, text="Set Sheet Counts", command=self.create_upload_fields).grid(row=7, column=0, columnspan=2)
 
     def create_upload_fields(self):
         # Clear previous fields
         for widget in self.root.grid_slaves():
-            if int(widget.grid_info()["row"]) > 4:  # Remove previous upload fields
+            if int(widget.grid_info()["row"]) > 7:  # Remove previous upload fields
                 widget.grid_forget()
 
         # Create upload fields for Demo files
         for i in range(self.num_demo_sheets.get()):
-            tk.Label(self.root, text=f"Upload Demo File {i + 1}:").grid(row=5 + i, column=0)
-            tk.Button(self.root, text="Browse", command=lambda idx=i: self.browse_demo_file()).grid(row=5 + i, column=1)
+            tk.Label(self.root, text=f"Upload Demo File {i + 1}:").grid(row=8 + i, column=0)
+            tk.Button(self.root, text="Browse", command=lambda idx=i: self.browse_demo_file()).grid(row=8 + i, column=1)
 
             # Grading criteria for Demo
             criteria_options = ["Relative Grading", "Maximum Marks", "Max 75 & Min 25", "Normal"]
-            tk.Label(self.root, text="Grading Method:").grid(row=5 + i, column=2)
+            tk.Label(self.root, text="Grading Method:").grid(row=8 + i, column=2)
             for j, option in enumerate(criteria_options):
-                tk.Radiobutton(self.root, text=option, variable=self.demo_grading_var, value=option).grid(row=5 + i, column=j + 3)
+                tk.Radiobutton(self.root, text=option, variable=self.demo_grading_var, value=option).grid(row=8 + i, column=j + 3)
 
             # Weightage for Demo
-            tk.Label(self.root, text="Weightage:").grid(row=5 + i, column=6)
-            tk.Entry(self.root, textvariable=self.demo_weightage).grid(row=5 + i, column=7)
+            tk.Label(self.root, text="Weightage:").grid(row=8 + i, column=6)
+            tk.Entry(self.root, textvariable=self.demo_weightage).grid(row=8 + i, column=7)
 
         # Create upload fields for Quiz files
         for i in range(self.num_quiz_sheets.get()):
             var = tk.StringVar()
             self.quiz_file_vars.append(var)
-            tk.Label(self.root, text=f"Upload Quiz File {i + 1}:").grid(row=5 + self.num_demo_sheets.get() + i, column=0)
-            tk.Button(self.root, text="Browse", command=lambda v=var: self.browse_file(v)).grid(row=5 + self.num_demo_sheets.get() + i, column=1)
+            tk.Label(self.root, text=f"Upload Quiz File {i + 1}:").grid(row=8 + self.num_demo_sheets.get() + i, column=0)
+            tk.Button(self.root, text="Browse", command=lambda v=var: self.browse_file(v)).grid(row=8 + self.num_demo_sheets.get() + i, column=1)
 
             # Grading criteria for Quiz
             quiz_grading_var = tk.StringVar(value="Normal")
             self.quiz_grading_vars.append(quiz_grading_var)  # Store the StringVar for each quiz
             criteria_options = ["Relative Grading", "Maximum Marks", "Max 75 & Min 25", "Normal"]
-            tk.Label(self.root, text="Grading Method:").grid(row=5 + self.num_demo_sheets.get() + i, column=2)
+            tk.Label(self.root, text="Grading Method:").grid(row=8 + self.num_demo_sheets.get() + i, column=2)
             for j, option in enumerate(criteria_options):
-                tk.Radiobutton(self.root, text=option, variable=quiz_grading_var, value=option).grid(row=5 + self.num_demo_sheets.get() + i, column=j + 3)
+                tk.Radiobutton(self.root, text=option, variable=quiz_grading_var, value=option).grid(row=8 + self.num_demo_sheets.get() + i, column=j + 3)
 
             # Weightage for Quiz
             quiz_weightage_var = tk.DoubleVar(value=30)
             self.quiz_weightages.append(quiz_weightage_var)
-            tk.Label(self.root, text="Weightage:").grid(row=5 + self.num_demo_sheets.get() + i, column=6)
-            tk.Entry(self.root, textvariable=quiz_weightage_var).grid(row=5 + self.num_demo_sheets.get() + i, column=7)
+            tk.Label(self.root, text="Weightage:").grid(row=8 + self.num_demo_sheets.get() + i, column=6)
+            tk.Entry(self.root, textvariable=quiz_weightage_var).grid(row=8 + self.num_demo_sheets.get() + i, column=7)
 
         # Create upload fields for Attendance files
         for i in range(self.num_attendance_sheets.get()):
             var = tk.StringVar()
             self.attendance_file_vars.append(var)
-            tk.Label(self.root, text=f"Upload Attendance File {i + 1}:").grid(row=5 + self.num_demo_sheets.get() + self.num_quiz_sheets.get() + i, column=0)
-            tk.Button(self.root, text="Browse", command=lambda v=var: self.browse_file(v)).grid(row=5 + self.num_demo_sheets.get() + self.num_quiz_sheets.get() + i, column=1)
+            tk.Label(self.root, text=f"Upload Attendance File {i + 1}:").grid(row=8 + self.num_demo_sheets.get() + self.num_quiz_sheets.get() + i, column=0)
+            tk.Button(self.root, text="Browse", command=lambda v=var: self.browse_file(v)).grid(row=8 + self.num_demo_sheets.get() + self.num_quiz_sheets.get() + i, column=1)
 
             # Grading criteria for Attendance
             attendance_grading_var = tk.StringVar(value="Normal")
             self.attendance_grading_vars.append(attendance_grading_var)  # Store the StringVar for each attendance
             criteria_options = ["Relative Grading", "Maximum Marks", "Max 75 & Min 25", "Normal"]
-            tk.Label(self.root, text="Grading Method:").grid(row=5 + self.num_demo_sheets.get() + self.num_quiz_sheets.get() + i, column=2)
+            tk.Label(self.root, text="Grading Method:").grid(row=8 + self.num_demo_sheets.get() + self.num_quiz_sheets.get() + i, column=2)
             for j, option in enumerate(criteria_options):
-                tk.Radiobutton(self.root, text=option, variable=attendance_grading_var, value=option).grid(row=5 + self.num_demo_sheets.get() + self.num_quiz_sheets.get() + i, column=j + 3)
+                tk.Radiobutton(self.root, text=option, variable=attendance_grading_var, value=option).grid(row=8 + self.num_demo_sheets.get() + self.num_quiz_sheets.get() + i, column=j + 3)
 
             # Weightage for Attendance
             attendance_weightage_var = tk.DoubleVar(value=20)
             self.attendance_weightages.append(attendance_weightage_var)
-            tk.Label(self.root, text="Weightage:").grid(row=5 + self.num_demo_sheets.get() + self.num_quiz_sheets.get() + i, column=6)
-            tk.Entry(self.root, textvariable=attendance_weightage_var).grid(row=5 + self.num_demo_sheets.get() + self.num_quiz_sheets.get() + i, column=7)
+            tk.Label(self.root, text="Weightage:").grid(row=8 + self.num_demo_sheets.get() + self.num_quiz_sheets.get() + i, column=6)
+            tk.Entry(self.root, textvariable=attendance_weightage_var).grid(row=8 + self.num_demo_sheets.get() + self.num_quiz_sheets.get() + i, column=7)
 
         # Create upload fields for Viva files
         for i in range(self.num_viva_sheets.get()):
             var = tk.StringVar()
             self.viva_file_vars.append(var)
-            tk.Label(self.root, text=f"Upload Viva File {i + 1}:").grid(row=5 + self.num_demo_sheets.get() + self.num_quiz_sheets.get() + self.num_attendance_sheets.get() + i, column=0)
-            tk.Button(self.root, text="Browse", command=lambda v=var: self.browse_file(v)).grid(row=5 + self.num_demo_sheets.get() + self.num_quiz_sheets.get() + self.num_attendance_sheets.get() + i, column=1)
+            tk.Label(self.root, text=f"Upload Viva File {i + 1}:").grid(row=8 + self.num_demo_sheets.get() + self.num_quiz_sheets.get() + self.num_attendance_sheets.get() + i, column=0)
+            tk.Button(self.root, text="Browse", command=lambda v=var: self.browse_file(v)).grid(row=8 + self.num_demo_sheets.get() + self.num_quiz_sheets.get() + self.num_attendance_sheets.get() + i, column=1)
 
             # Grading criteria for Viva
             viva_grading_var = tk.StringVar(value="Normal")
             self.viva_grading_vars.append(viva_grading_var)  # Store the StringVar for each viva
             criteria_options = ["Relative Grading", "Maximum Marks", "Max 75 & Min 25", "Normal"]
-            tk.Label(self.root, text="Grading Method:").grid(row=5 + self.num_demo_sheets.get() + self.num_quiz_sheets.get() + self.num_attendance_sheets.get() + i, column=2)
+            tk.Label(self.root, text="Grading Method:").grid(row=8 + self.num_demo_sheets.get() + self.num_quiz_sheets.get() + self.num_attendance_sheets.get() + i, column=2)
             for j, option in enumerate(criteria_options):
-                tk.Radiobutton(self.root, text=option, variable=viva_grading_var, value=option).grid(row=5 + self.num_demo_sheets.get() + self.num_quiz_sheets.get() + self.num_attendance_sheets.get() + i, column=j + 3)
+                tk.Radiobutton(self.root, text=option, variable=viva_grading_var, value=option).grid(row=8 + self.num_demo_sheets.get() + self.num_quiz_sheets.get() + self.num_attendance_sheets.get() + i, column=j + 3)
 
             # Weightage for Viva
             viva_weightage_var = tk.DoubleVar(value=20)
             self.viva_weightages.append(viva_weightage_var)
-            tk.Label(self.root, text="Weightage:").grid(row=5 + self.num_demo_sheets.get() + self.num_quiz_sheets.get() + self.num_attendance_sheets.get() + i, column=6)
-            tk.Entry(self.root, textvariable=viva_weightage_var).grid(row=5 + self.num_demo_sheets.get() + self.num_quiz_sheets.get() + self.num_attendance_sheets.get() + i, column=7)
+            tk.Label(self.root, text="Weightage:").grid(row=8 + self.num_demo_sheets.get() + self.num_quiz_sheets.get() + self.num_attendance_sheets.get() + i, column=6)
+            tk.Entry(self.root, textvariable=viva_weightage_var).grid(row=8 + self.num_demo_sheets.get() + self.num_quiz_sheets.get() + self.num_attendance_sheets.get() + i, column=7)
 
         # Submit button to merge sheets
-        tk.Button(root, text="Merge Sheets", command=self.merge_sheets).grid(row=6 + self.num_demo_sheets.get() + self.num_quiz_sheets.get() + self.num_attendance_sheets.get() + self.num_viva_sheets.get(), column=0, columnspan=2)
+        tk.Button(self.root, text="Merge Sheets", command=self.merge_sheets).grid(row=9 + self.num_demo_sheets.get() + self.num_quiz_sheets.get() + self.num_attendance_sheets.get() + self.num_viva_sheets.get(), column=0, columnspan=2)
 
     def browse_demo_file(self):
         self.demo_file_path = filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx")])
@@ -181,15 +197,23 @@ class SheetMergerApp:
             # Calculate weighted marks based on grading method
             self.calculate_weighted_marks(merged_df)
 
-            # Select only required columns for final output
-            final_columns = ['Enrollment_No', 'Name', 'Demo Weighted', 'Quiz Weighted', 'Attendance Weighted', 'Viva Weighted']
-            merged_df['Total Marks'] = merged_df[['Demo Weighted', 'Quiz Weighted', 'Attendance Weighted', 'Viva Weighted']].sum(axis=1)  # Calculate Total Marks
-            final_df = merged_df[final_columns + ['Total Marks']]  # Add Total Marks to output
-
-            # Save merged DataFrame to Excel
+            # Create a new Excel writer object
             output_file = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")])
             if output_file:
-                final_df.to_excel(output_file, index=False)
+                with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
+                    # Write the header information
+                    header_df = pd.DataFrame({
+                        'Branch': [self.branch_var.get()],
+                        'Subject': [self.subject_var.get()],
+                        'Semester': [self.semester_var.get()]
+                    })
+                    header_df.to_excel(writer, sheet_name='Merged Data', index=False, startrow=0)
+
+                    # Write the merged data
+                    merged_df.to_excel(writer, sheet_name='Merged Data', index=False, startrow=3)
+
+                
+
                 messagebox.showinfo("Success", "Sheets merged successfully!")
         except Exception as e:
             messagebox.showerror("Error", str(e))
@@ -243,9 +267,9 @@ class SheetMergerApp:
             else:
                 merged_df['Viva Weighted'] = merged_df['Viva Marks'] * (viva_weight.get() / 100)  # Default to normal
 
+        merged_df['Total Marks'] = merged_df[['Demo Weighted', 'Quiz Weighted', 'Attendance Weighted', 'Viva Weighted']].sum(axis=1)
 
 if __name__ == "__main__":
-
     root = tk.Tk()
     app = SheetMergerApp(root)
     root.mainloop()
